@@ -1,0 +1,596 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8"> 
+    <title>Interest Navigator - Schedule</title> 
+    <link rel="manifest" href="manifest.json">
+    <link rel="icon" type="image/ico" sizes="32x32" href="images/schedule.ico">
+    <!-- <link rel="stylesheet" type="text/css" href="in.css"> -->
+
+
+    <style>
+
+@import "in.css";
+
+body{
+  background: #B3BE93;
+}
+
+#parameters-div{ 
+  border-bottom-style: ridge;
+  border-bottom-color: #8f9f60;
+  margin-bottom: 1em;
+  display: none;
+}
+
+@media print {
+  label{ display: none; }
+
+  #title-ipt{ 
+    border-style: none; 
+    display: block; 
+    margin: auto; 
+    text-align: center; 
+    width: 100%; 
+  }
+
+  #parameters-div button{ display: none; }
+  #parameters-div { 
+    border-bottom-color: black;
+    display:initial;
+  }
+
+  #schedule-tbd{ max-height: none; overflow: visible; }
+
+  .command-line { display: none; }
+
+}
+
+#title-ipt{ width: 20em; }
+
+.title-bar button{ 
+  float: right; 
+}
+
+#params-list-div{
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-around;
+}
+.params-item{
+  float: left;
+  padding-left: 0.5em;
+  width: 19%;
+  min-width: 15em;
+  margin:1px;
+  border: 1px solid #8f9f60;
+}
+
+.params-item-prompt::after{ content: ": " }
+
+#schedule-tbl{ 
+  display: block;
+  border-collapse: collapse;
+}
+
+#schedule-tbl tr:nth-child(even){background-color: #dde2cf}
+
+#schedule-thd{
+  display: block;
+}
+#schedule-tbl th,
+#schedule-tbl td{ 
+  padding-left: 0;
+  padding-right: 2px; 
+  margin: 0; 
+  text-align:right; 
+  border: 0;
+}
+
+#schedule-tbl td:nth-child(1),
+#schedule-tbl th:nth-child(1){ padding-right: 1em; }
+
+#schedule-tbl th:nth-child(2){ text-align: center; }
+#schedule-tbl td:nth-child(2){ text-align: left; }
+#schedule-tbl th:nth-child(3){ text-align: right; }
+#schedule-tbl td:nth-child(3){ text-align: right; }
+#schedule-tbl th:nth-child(4){ text-align: right; }
+#schedule-tbl td:nth-child(4){ text-align: right; }
+#schedule-tbl th:nth-child(1),
+#schedule-tbl td:nth-child(1){ min-width: 2em; width: 7%;}
+#schedule-tbl th:nth-child(2),
+#schedule-tbl td:nth-child(2){ min-width: 8em; width: 29%;}
+#schedule-tbl th:nth-child(3),
+#schedule-tbl td:nth-child(3){ min-width: 4em; width: 14%;}
+#schedule-tbl th:nth-child(4),
+#schedule-tbl td:nth-child(4){ min-width: 4em; width: 14%;}
+#schedule-tbl th:nth-child(5),
+#schedule-tbl td:nth-child(5){ min-width: 4em; width: 14%;}
+#schedule-tbl th:nth-child(6),
+#schedule-tbl td:nth-child(6){ min-width: 6em; width: 22%;}
+
+
+#schedule-tbd{
+  display: block;
+  border: 1px solid;
+  overflow-y: scroll;
+}
+
+.content-div {
+  padding: 3%;
+  padding-top: 1em;
+  padding-bottom: 2em;
+}
+
+#export-dlg  label{ 
+  width: 8em; 
+  display: inline-block;
+}
+#export-dlg  #name-ipt{ 
+  display: inline-block;
+  width: 45%;
+}
+
+    </style>
+
+    <script type="text/javascript" src="lib/financial.js"></script>
+    <script type="text/javascript" src="lib/r78.js"></script>
+    <script type="text/javascript" src="lib/kSink.js"></script>
+    <script type="text/javascript" src="lib/dialog.js"></script>
+
+    <script>
+
+
+//----------------------------------------------------------------------------
+window.addEventListener( "resize", resizeTable );
+//----------------------------------------------------------------------------
+
+function resizeTable(){
+  try{
+    var tblStart = document.getElementById( "schedule-tbl" ).offsetTop;
+    var cmdStart = document.getElementById( "commands" ).offsetTop;
+    var cmdHeight = document.getElementById( "commands" ).offsetHeight;
+    var thdHeight = document.getElementById( "schedule-thd" ).offsetHeight;
+    var tbdHeight = cmdStart - tblStart - thdHeight - cmdHeight;
+
+    document.getElementById( "schedule-tbd" ).style.maxHeight = 
+      String( tbdHeight ) + "px";
+  }catch( err ){
+    alert( err );
+  }
+};
+
+var params;
+//----------------------------------------------------------------------------
+window.addEventListener( "message", function( event ){
+  //----------------------------------------------------------------------------
+  var div_elm = document.getElementById( "params-list-div" );
+
+  var toLocaleDate = function( aDate ){
+    return  ( typeof( aDate ) == "string" 
+      ?  new Date( aDate + "T00:00:00" ) : aDate ).toDateString();
+  }
+
+  //----------------------------------------------------------------------------
+  var addParameters = function(){
+    //----------------------------------------------------------------------------
+    var addParam = function( prompt, value ){
+      var txt_node;
+      var parm_elm = document.createElement( "DIV" );
+      parm_elm.className = "params-item";
+      div_elm.appendChild( parm_elm );
+
+      var paramPrompt = document.createElement( "SPAN" );
+      paramPrompt.className = "params-item-prompt";
+      txt_node = document.createTextNode( prompt );
+      paramPrompt.appendChild( txt_node );
+      parm_elm.appendChild( paramPrompt );
+
+      var valuePrompt = document.createElement( "SPAN" );
+      valuePrompt.className = "params-item-value";
+      txt_node = document.createTextNode( value );
+      valuePrompt.appendChild( txt_node );
+      parm_elm.appendChild( valuePrompt );
+    };
+    
+    addParam( "Start Date", toLocaleDate( params.startDate ));
+    if( !params.datesAllSame ){
+      addParam( "Payment Start", toLocaleDate( params.paymentDate ));
+      addParam( "Interest Start", toLocaleDate( params.interestDate ));
+    }
+
+    addParam( "No of Payments", params.periods );
+    addParam( params.rule78 
+	? "Finance Charge" 
+	: "Interest Rate", params.rate );
+    addParam( "Frequency", FINANCIAL.frequency.list[ params.frequency ]);
+    addParam( "Principal", params.initial );
+    addParam( "Payment Amount", params.periodic );
+    addParam( "Balloon", params.finalAmount || 0.0 );
+    addParam( "Payment Timing", FINANCIAL.pmtMode.list[ params.pmtMode ]);
+    addParam( "Amortization", FINANCIAL.amortize.list[ params.rule78 ]);
+  };
+
+  //----------------------------------------------------------------------------
+  var addAggregate = function( list, id ){
+    //----------------------------------------------------------------------------
+    var tr_elm = document.getElementById( id );
+    if( !tr_elm )
+      throw list + " not found - BUG";
+
+    var item;
+    for( item in list ){
+      var th_elm = document.createElement( "TH" );
+      var value = typeof list[ item ] == "number" 
+	? deciString( list[ item ]) : list[ item ];
+      var t_node = document.createTextNode( value );
+      th_elm.appendChild( t_node );
+      tr_elm.appendChild( th_elm );
+    }
+  };
+
+  // Add the body of the schedule table.
+  //----------------------------------------------------------------------------
+  var addTableBody = function( nthInterest_fun, nthBalance_fun ){
+    //----------------------------------------------------------------------------
+    var payments = params.periodic;
+    var tbody_elm = document.getElementById( "schedule-tbd" );
+
+    // Add a single row to the schedule table
+    //----------------------------------------------------------------------------
+    var addRow = function( row ){
+    //----------------------------------------------------------------------------
+      var tr_elm = document.createElement( "TR" );
+      for( var item in row ){
+	var value;
+	if( row[ item ] instanceof Date )
+	  value = row[ item ].toDateString();
+
+	else if( item == 0 )
+	  value = row[ item ].toString();
+
+	else{
+	  var val = row[ item ];
+	  if( ! params.isLoan && ( item == 2 || item == 4 ) && ( val != "" ))
+	    val = -val;
+	  value = deciString( val );
+	}
+	var td_elm = document.createElement( "TD" );
+	td_elm.className = "schedule-row";
+	var t_node = document.createTextNode( value );
+	td_elm.appendChild( t_node );
+	tr_elm.appendChild( td_elm );
+      }
+      tbody_elm.appendChild( tr_elm );
+    };
+    //----------------------------------------------------------------------------
+
+    var sumInterest = 0;
+    var sumPrincipal = 0;
+    var sumPayments = 0;
+    var firstInterest = FINANCIAL.firstInterestPeriod( params );
+    var firstPay = FINANCIAL.firstPayPeriod( params );
+    var payCount = params.periods;
+
+    addRow([ "", toLocaleDate( params.startDate ), "", "", "", params.initial ]);
+    var i;
+    for( i = 0; i < firstPay; i++ ){
+      if( i >= firstInterest ){
+	var intr = nthInterest_fun( params, i );
+	addRow([
+	  "",
+	  FINANCIAL.calcNthDate( params, i ), 
+	  "",
+	  intr,
+	  -intr,
+	  nthBalance_fun( params, i )
+	]);
+	sumInterest += intr;
+	sumPrincipal -= intr;
+      }
+    }
+
+    for( i = firstPay; i < firstPay + payCount; i++ ){
+      var period = i;
+      var interest = nthInterest_fun( params, period );
+      var principal = payments - interest;
+      var nthBalance = nthBalance_fun( params, period );
+      var row = [ 
+	i -firstPay +1,
+	FINANCIAL.calcNthDate( params, period ), 
+	payments,
+	interest, 
+	principal,
+	nthBalance_fun( params, period )
+      ];
+      addRow( row );
+      sumInterest += interest;
+      sumPrincipal += principal;
+      sumPayments += payments;
+    }
+    if( ! params.isLoan ){
+	sumPayments = -sumPayments;
+	sumPrincipal = -sumPrincipal;
+    }
+    return { payments: sumPayments, interest: sumInterest, principal: sumPrincipal };
+  };
+  try{
+    // until schedule chaining is allowed, throw an error if this is the second time
+    //  a message is received
+    if( params )
+      throw "Multiple schedules received. Could be a bug.";
+
+    params = event.data;
+
+    if( params.name ){
+      elm = document.getElementById( "title-ipt" );
+      elm.value = params.name;
+    }
+
+    // Validate dates
+    if( ! params.datesAllSame ){
+      var st_dat = new Date( params.startDate );
+      var pm_dat = new Date( params.paymentDate );
+      var in_dat = new Date( params.interestDate );
+
+      if( pm_dat < st_dat || in_dat < st_dat )
+	throw( "Start Date is after payment or interest begin dates." );
+    }
+
+    FINANCIAL.frequency.curIndex = params.frequency;
+    FINANCIAL.pmtMode.curIndex = params.pmtMode;
+    FINANCIAL.amortize.curIndex = params.amortize;
+    addParameters();
+
+    // There may be a small balloon amount remaining because of rounding. It has
+    // to be accounted for balance calculations 
+    if( params.rule78 )
+      ;
+    else if( ! params.finalAmount ){
+      var balloon = FINANCIAL.balloon( params );
+      params.finalAmount = balloon;
+    }
+
+    var headList;
+    if( params.isLoan )
+      headList = [ "No", "Date", "Payment", "Interest", "Principal", "Balance" ];
+    else
+      headList = 
+	[ "No", "Date", "Deposit", "Interest", "Total", "Balance" ];
+
+    addAggregate( headList, "schedule-thd-tr" );
+
+    var nthInterest_fun, nthBalance_fun;
+    if( params.rule78 ){
+      nthInterest_fun = R78.nthInterest;
+      nthBalance_fun = R78.nthBalance;
+    }else{
+      nthInterest_fun = FINANCIAL.nthInterest;
+      nthBalance_fun = FINANCIAL.nthBalance;
+    }
+
+    var sums = addTableBody( nthInterest_fun, nthBalance_fun );
+    var footList = [ "", "TOTAL", sums.payments, sums.interest, sums.principal, ""];
+    addAggregate( footList, "schedule-tft-tr" );
+
+    resizeTable();
+  }catch( e ){
+    alert( e );
+  }
+});
+//----------------------------------------------------------------------------
+function hideParams(){ 
+  //----------------------------------------------------------------------------
+  document.getElementById( "parameters-div" ).style.display = "none"; 
+  resizeTable();
+}
+
+//----------------------------------------------------------------------------
+function showParams(){ 
+  //----------------------------------------------------------------------------
+  var disp = document.getElementById( "parameters-div" ).style.display;
+  if( !disp || disp == 'none' )
+    document.getElementById( "parameters-div" ).style.display = "block"; 
+  else
+    document.getElementById( "parameters-div" ).style.display = 'none';
+
+  resizeTable();
+}
+
+//----------------------------------------------------------------------------
+document.addEventListener( "DOMContentLoaded", function(){ 
+//----------------------------------------------------------------------------
+  // test for print event handlers
+ if( ! document.body.onbeforeprint ){
+   var printHandler = function(mql) {
+       if(mql.matches) {
+	beforePrint();
+       } else {
+	afterPrint();
+       }
+   };
+    
+   var mql = window.matchMedia('print');
+   mql.addListener(printHandler);
+ }
+				   
+  opener.postMessage( "Schedule", "*" ); 
+
+});
+
+var paramStatus;
+var tableHeight;
+//----------------------------------------------------------------------------
+function beforePrint(){ 
+  //----------------------------------------------------------------------------
+  var elem = document.getElementById( "parameters-div" );
+  paramStatus = elem.style.display;
+  elem.style.display = "initial";
+
+  elem =  document.getElementById( "schedule-tbd" );
+  tableHeight = elem.style.maxHeight;
+  elem.style.maxHeight = "none";
+}
+
+//----------------------------------------------------------------------------
+function afterPrint(){ 
+//----------------------------------------------------------------------------
+  document.getElementById( "parameters-div" ).style.display = paramStatus || "none";
+}
+
+    </script>
+  </head>
+
+  <body onafterprint = "afterPrint()" onbeforeprint = "beforePrint()">
+    <label for="title-ipt"> Page heading:</label>
+    <input id="title-ipt" type="text" autocomplete="on" value="Schedule">
+    <br>
+    <div id="parameters-div">
+      <p class="title-bar">Parameters
+      <BUTTON onClick="hideParams()">&#x2716</BUTTON>
+      </p>
+      <div id="params-list-div">
+      </div>
+    </div>
+    <table id="schedule-tbl" >
+      <thead id="schedule-thd" >
+	<tr id="schedule-thd-tr" > </tr>
+      </thead>
+      <tbody id="schedule-tbd"></tbody>
+      <tfoot id="schedule-tft">
+	<tr id="schedule-tft-tr" ></tr>
+      </tfoot>
+    </table>
+    <div class="command-line" id="commands">
+      <button id="parameters-btn" onclick = "showParams()">Parameters</button>
+      <button id="print-btn" onclick = "window.print()">Print</button>
+      <button id="export-btn">Export...</button>
+    </div>
+
+    <div id="export-dlg" class="dialog">
+      <p class="title-bar">Export Options</p>
+      <div class="content-div">
+	<label for="name-ipt">File Name:</label>
+	<input type=text id=name-ipt title="Save file as">
+	<br>
+
+	<label for="sep-slt">Field Separator:</label>
+	<select id="sep-slt" title="Pick character to separate columns">
+	  <option sep=&#x0009>{tab}     </option>
+	  <option sep=","   >Comma (,) </option>
+	</select>
+	<br>
+
+	<label for="quote-slt" >Quote Character:</label>
+	<select id="quote-slt" title="Pick a character to qualify text fields">
+	  <option quote=""  >{none}</option>
+	  <option quote='"'>"     </option>
+	  <option quote="'">'     </option>
+	</select>
+	<br>
+
+	<label for="header-chk">Column Headings:</label>
+	<input type="checkbox" id=header-chk checked 
+	title="Save column headers as first row">
+	<div class="command-line" id="export-cmd">
+	  <button id="export-ok-btn">OK </button>
+	  <button id="export-cancel-btn">Cancel</button>
+	</div>
+      </div>
+      <script>
+
+document.addEventListener( "DOMContentLoaded", function(){
+  try{
+    var export_ModalDialog;
+    function oK(){
+      var saveData = "";
+      var fieldSep;
+      var quoteChar;
+
+      function addLine( fields ){
+	for( var i = 0; i < fields.length; i++ ){
+	  if( i > 0 )
+	    saveData += fieldSep;
+
+	  saveData += quoteChar;
+	  saveData += fields[ i ].innerHTML;
+	  saveData += quoteChar;
+	}
+	saveData += "\r\n";
+      }
+
+      function heading(){
+	var fields = document.querySelectorAll( "#schedule-thd-tr th" );
+	addLine( fields );
+      }
+
+      function body(){
+	var lines = document.querySelectorAll( "#schedule-tbd tr" );
+	for( var i=0; i < lines.length; i++ )
+	  addLine( lines[ i ].querySelectorAll( "td" ));
+      }
+
+      try{
+	var sep_slt = document.getElementById( "sep-slt" );
+	var sep_opts = document.querySelectorAll( "#sep-slt option");
+	fieldSep = sep_opts[ sep_slt.selectedIndex ].attributes.sep.value;
+
+	var quote_slt = document.getElementById( "quote-slt" );
+	var quote_opts = document.querySelectorAll( "#quote-slt option" );
+	quoteChar = quote_opts[ quote_slt.selectedIndex ].attributes.quote.value;
+
+	var name = document.getElementById( "name-ipt" ).value;
+	if( ! name )
+	  throw "A file name is required.";
+
+	var header_chk = document.getElementById( "header-chk" );
+	if( header_chk.checked )
+	  heading();
+
+	body();
+	saveObject( name, saveData );
+
+      }catch( e ){
+	DIALOGS.alertDialog( e );
+      }
+      export_ModalDialog.hide();
+    }
+    var oK_btn = document.getElementById( "export-ok-btn" );
+    oK_btn.addEventListener( "click", oK );
+
+    function cancel(){
+      try{
+	export_ModalDialog.hide();
+      }catch( e ){
+	DIALOGS.alertDialog( e );
+      }
+    }
+    var cancel_btn = document.getElementById( "export-cancel-btn" );
+    cancel_btn.addEventListener( "click", cancel );
+
+    var div_elm = document.getElementById( "export-dlg" );
+    var parms = { cancel: cancel};
+    export_ModalDialog = new DIALOGS.ModalDialog( parms, div_elm );
+
+    var export_btn = document.getElementById( "export-btn" );
+    function export_btn_click(){
+      try{
+	var ipt = document.getElementById( "name-ipt" );
+	if( ipt.value == "" )
+	  ipt.value = document.getElementById( "title-ipt" ).value;
+	export_ModalDialog.show();
+      }catch( e ){
+	DIALOGS.alertDialog( e );
+      }
+    }
+	
+    export_btn.addEventListener( "click", export_btn_click );
+
+  }catch(e){
+    DIALOGS.alertDialog( e );
+  }
+});
+      </script>
+    </div>
+  </body>
+</html>

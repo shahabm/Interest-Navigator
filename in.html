@@ -1,0 +1,1833 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="UTF-8"> 
+    <title>Interest Navigator - Calculator</title> 
+    <link rel="manifest" href="manifest.json">
+    <link rel="icon" type="image/ico" sizes="32x32" href="images/calculator.ico">
+    <style>
+
+
+/* Common style for all htmls in Interest Navigator */
+@import "in.css";
+#menu-icon { 
+  width: attr(height); 
+  margin: 0;
+  padding: 0;
+}
+
+body{ margin:0; }
+#main-div{
+  background: #B3BE93;
+  border-bottom: 1px solid #000; /* To see the outline of the form */
+  border-left: 1px solid #000; /* To see the outline of the form */
+  padding: 0;
+  width: auto;
+  height: auto;
+
+  position: relative;
+  left: 0;
+  top: 0;
+
+  display: flex;
+  flex-wrap: wrap;
+  min-width: 20em;
+  max-width: 40em;
+}
+#calc-title{ margin-left: 1em; }
+
+.central{
+  border-right: 1px solid black;
+  box-sizing: border-box;
+  float: left;
+  height: 22em;
+  left: 0;
+  padding: 1em;
+  position: relative;
+  top: 0;
+  width: 20em;
+}
+
+#options-div{
+  background-repeat: no-repeat;
+  background-size: contain;
+  display: inline;
+}
+
+#options-div img{
+  box-sizing: border-box;
+  padding-top: 1em;
+  padding-bottom: 1em;
+  padding-left: 0;
+  padding-right: 0;
+  height: 35%;
+  width: 75%;
+  margin-left: 10%;
+}
+
+#options-div p{ 
+  color: #DC143C; 
+  margin: 0;
+  padding: 0;
+}
+
+#options-div .options-group{
+  font-size: 100%;
+  font-style: italic;
+  text-align: center;
+  text-decoration: underline;
+  padding-bottom: .5em;
+}
+
+#options-div .options-value{ font-size: 80%; }
+#options-div .options-value:hover { cursor:pointer; font-weight: bold; }
+
+
+#page-slt {
+  margin-top: 0;
+  margin-left:0;
+  margin-right: 0;
+  margin-bottom: 1em;
+  height: 2em;
+  width: 100%;
+  background-color: #DDDDDD;
+  border: 2px outset #F0F0F0;
+  border-top-left-radius: 1em;
+  border-bottom-left-radius: 1em;
+}
+
+.calc-ipt, .label-btn{
+  box-sizing: border-box;
+  height: 2em;
+  margin-bottom: 0.30em;
+  margin-right: 0;
+  margin-top: 0;
+  padding:0;
+}
+
+#date-btn{ 
+  border-top-right-radius: 0em;
+  border-bottom-right-radius: 0em;
+}
+
+.label-btn{
+  border-radius: 1em;
+  float:left;
+  margin-left:0;
+  margin-right: 1em;
+  width: 50%;
+}
+
+.calc-ipt{
+  width: 45%;
+  float: right;
+}
+
+#dates-stat-img{
+  height: 40%;
+  margin: 0;
+  border: 0;
+  padding: 0;
+}
+
+
+[type="number"]{ text-align: right;}
+
+/*
+#clear-btn{
+  box-sizing: border-box;
+  float: left;
+  width: 41%;
+}
+
+#schedule-btn{
+  float: right;
+  width: 41%;
+}
+ */
+
+/*
+#options-btn{
+  box-sizing: border-box;
+  width: 91%;
+}
+ */
+
+/* Dates dialog
+ *----------------------------*/
+#start-dates {
+  max-width: 20em;
+  visibility: hidden;
+  padding-top: 0;
+  padding-left: 0;
+  padding-right: 0;
+  padding-bottom: 3em;
+}
+
+#dates-inputs-div{ 
+  margin:0;
+  padding: 1.5%;
+  box-sizing: border-box;
+  position: relative;
+  left: 0;
+  top: 0;
+  float: left;
+}
+
+#dates-inputs-div .prompt{ 
+  float: left;
+  width: 45%; 
+  margin-top: 0;
+  margin-left:0;
+  margin-right: 0;
+}
+
+.field-div{ 
+  border: 1px solid #AAAAAA;
+  padding-top: 0.5em;
+  padding-left: 0.5em;
+}
+
+.field-div input{ 
+  /* width: 50%; */
+  width: auto;
+  box-sizing: border-box;
+  margin-left: 0; 
+  margin-right: 0; 
+  margin-top:0;
+  margin-bottom: 0;
+}
+
+.field-div p{
+  margin:0;
+  padding-top: 0.5em;
+  padding-bottom: 0.5em;
+}
+
+.field-div + .field-div{ margin-top: 0.5em; }
+
+/*
+/* Options Dialog
+-------------------*/
+#default-options-div {
+  visibility: hidden;
+}
+
+.content-div {
+  padding: 3%;
+  padding-top: 1em;
+  padding-bottom: 2em;
+}
+
+.content-div fieldset {
+  margin-top: 1em;
+  border: 1px solid #AAAAAA;
+}
+
+#settings-dlg  label{ 
+  width: 7em; 
+  display: inline-block;
+}
+#settings-dlg{ min-width: 18em; }
+/*
+#settings-dlg #settings-date-order { 
+  display: inline-flex;
+}
+*/
+
+/* #options-amortization-fls{ margin-bottom: 2em; } */
+
+    </style>
+
+    <script type="text/javascript" src="lib/financial.js"></script>
+    <script type="text/javascript" src="lib/r78.js"></script>
+    <script type="text/javascript" src="lib/kSink.js"></script>
+    <script type="text/javascript" src="lib/dialog.js"></script>
+    <script type="text/javascript" src="lib/clickNav.js"></script>
+
+    <script>
+
+var mode_is_savings = 0;
+var mode_labels= [
+  [ "periods-btn", "<u>N</u>o. of Payments", "<u>N</u>o. of Deposits" ],
+  [ "rate-btn", "Interest <u>R</u>ate %", "Interest <u>R</u>ate %" ],
+  [ "initial-btn", "Pr<u>i</u>ncipal $", "Beg<u>i</u>ning Balance" ],
+  [ "periodic-btn", "<u>P</u>ayment Amount $", "De<u>p</u>sit Amount" ],
+  [ "final-btn","Ba<u>l</u>loon $", "Future Va<u>l</u>ue" ]
+];
+
+
+var consistentVals = false;
+var intRate = 0.0;
+var finCharge = 0.0;
+var dates_ModalDialog;
+var options_ModalDialog;
+var dateSettings_ModalDialog;
+var saveInputs_ModalDialog;
+var settins_ModalDialog;
+var calcName;			// Current calculation name;
+
+//------------------------------------------------------------------------------
+function setCalcName( name ){
+//------------------------------------------------------------------------------
+  var title_elm = document.getElementById( "calc-title" );
+  calcName = name;
+  title_elm.innerHTML = " " +( calcName || "New" )+ " Calculation";
+}
+
+//------------------------------------------------------------------------------
+function validateInputs( obj, accuracy ){
+//------------------------------------------------------------------------------
+  var rv = true;
+  try{
+    var curInputs = getInputs();
+
+    if( ! accuracy )
+      accuracy = 2;
+
+    fieldList = [
+      "name", "periods", "rate", "initial", "periodic", 
+      "finalAmount", "datesAllSame", "startDate",  
+      "rule78", "isLoan", "frequency", "pmtMode"
+    ];
+    for( var i = 0; i < fieldList.length; i++ ){
+      if( typeof( obj[ fieldList[ i ]]) === "undefined" )
+	rv = false;
+    }
+
+    // fix dates from string to object type
+    obj.startDate = makeDate( obj.startDate );
+    if( ! obj.datesAllSame ){
+      obj.paymentDate = makeDate( obj.paymentDate );
+      obj.interestDate = makeDate( obj.interestDate );
+    }
+
+    var defVals = getDefaults();
+    paymentMode.setIndex( obj.pmtMode || defVals.pmtMode );
+    amortize.setIndex( obj.rule78  || defVals.rule78 );
+    mode_is_savings = ( obj.isLoan || defVals.isLoan );
+
+    if( obj.hasOwnProperty( 'consistentVals' ) && obj.consistentVals ){
+      var principal = ( obj.rule78 ? R78.getPrincipal : FINANCIAL.nthBalance )( obj );
+      rv = deciRound( principal, accuracy ) == 
+	deciRound( obj.initial || 0, accuracy );
+    }
+    else
+      rv = false;
+
+  }catch( e ){
+    paymentFrequency.setIndex( curInputs.frequency );
+    paymentMode.setIndex( curInputs.pmtMode );
+    amortize.setIndex( curInputs.rul78 );
+    mode_is_savings = !curInputs.isLoan;
+    throw e;
+  }
+  return rv;
+}
+//------------------------------------------------------------------------------
+function setValues( obj ){
+//------------------------------------------------------------------------------
+  setCalcName( obj.name );
+  document.getElementById( "page-slt" ).selectedIndex = obj.isLoan ? "0" : "1";
+  document.getElementById( "date-dat" ).setDateValue( obj.startDate );
+
+  if( ! dates_ModalDialog )
+    initializeStartDates();
+
+  var fields = dates_ModalDialog.fields;
+  fields.modified = false;
+
+  if( obj.datesAllSame ){
+    setDatesLight( 0 );
+    fields.allSame = true;
+  }else{
+    setDatesLight( 1 );
+    fields.allSame = false;
+    fields.start = obj.startDate;
+    fields.payment = obj.paymentDate;
+    fields.interest = obj.interestDate;
+  }
+
+  document.getElementById( "periods-num"  ).value = obj.periods;
+  document.getElementById( "rate-num"     ).value = obj.rate;
+  document.getElementById( "initial-num"  ).value = obj.initial;
+  document.getElementById( "periodic-num" ).value = obj.periodic;
+  document.getElementById( "final-num"    ).value = obj.finalAmount;
+}
+//------------------------------------------------------------------------------
+function getInputs() {
+//------------------------------------------------------------------------------
+  var r78 = amortize.getCurIndex();
+  var startDate = document.getElementById( "date-dat" ).getDateValue();
+  var allSame =  dates_ModalDialog.fields.allSame;
+
+  function dateOf( iptId ){
+    if( allSame )
+      return startDate;
+    var ipt_elm = document.getElementById( iptId );
+    return ipt_elm.getDateValue();
+  }
+
+  return {
+    name: calcName,
+    periods: document.getElementById( "periods-num" ).valueAsNumber,
+    rate: document.getElementById( "rate-num" ).valueAsNumber,
+    initial: document.getElementById( "initial-num").valueAsNumber,
+    periodic: document.getElementById( "periodic-num").valueAsNumber * 
+      [ 1, -1][ mode_is_savings],
+      finalAmount: document.getElementById( "final-num" ).valueAsNumber,
+      datesAllSame: r78 ? true : allSame,
+      startDate:	startDate,
+      paymentDate: r78 ? startDate : dateOf( "dates-payment-dat" ),
+      interestDate: r78 ? startDate : dateOf( "dates-interest-dat" ),
+      rule78: r78,
+      isLoan: ! mode_is_savings,
+      frequency: paymentFrequency.getCurIndex(),
+      pmtMode: paymentMode.getCurIndex(),
+  }
+}
+
+//------------------------------------------------------------------------------
+function setOptions( obj ){
+//------------------------------------------------------------------------------
+  clearInputs();
+  paymentFrequency.setIndex( obj.frequency );
+  paymentMode.setIndex( obj.pmtMode );
+  amortize.setIndex( obj.rule78 );
+  mode_is_savings = obj.isLoan ? 0 : 1;
+  populateOptions();		
+  populateButtonLabels();
+}
+
+//------------------------------------------------------------------------------
+function recalcMsg(){ 
+//------------------------------------------------------------------------------
+  consistentVals = false;
+  panelMsg( "Push a target button to reevaluate." );
+}
+
+//------------------------------------------------------------------------------
+function consistentMsg(){
+//------------------------------------------------------------------------------
+  consistentVals = true;
+  panelMsg( "Values are consistent." );
+}
+
+//------------------------------------------------------------------------------
+function checkSave(){
+//------------------------------------------------------------------------------
+  var msg = "Saving / Restore of options and schedules is not available. " +
+    "You may be able to fix this by setting browser options.";
+  if( ! hasLocalStorage() )
+    throw msg;
+
+  return true;
+}
+
+//------------------------------------------------------------------------------
+function populateOptions(){
+//------------------------------------------------------------------------------
+  document.getElementById( "payment-period-p" ).innerHTML = 
+    paymentFrequency.getCurValue();
+
+  document.getElementById( "settlement-p" ).innerHTML = 
+    paymentMode.getCurValue();
+
+  document.getElementById( "amortization-method" ).innerHTML =
+    amortize.getCurValue();
+
+}
+
+//------------------------------------------------------------------------------
+function clearInputs(){
+//------------------------------------------------------------------------------
+  var elms = document.getElementsByClassName( "calc-ipt" );
+  var i;
+
+
+// Clear input fields
+  for( i=0; i<elms.length; i++ ){
+    var elm = elms[i];
+    if( elm.classList.contains( "datepicker" )){
+      var d = makeDate();
+      elm.setDateValue( d );
+    }
+    else
+      elm.value = "";
+  }
+
+  dates_ModalDialog.fields.allSame = true;
+  consistentVals = false;
+  panelMsg( "" );
+  intRate = 0.0;
+  finCharge = 0.0;
+
+}
+//------------------------------------------------------------------------------
+function panelMsg( msg ){
+//------------------------------------------------------------------------------
+  document.getElementById( "input-panel" ).textContent = msg; 
+}
+//------------------------------------------------------------------------------
+function help( url ){
+//------------------------------------------------------------------------------
+  try{
+    window.open( url, "HELP", 
+    "width=" + screen.width / 2 + "," + 
+    "height=" + screen.height + "," +
+    "left=" + screen.width /2 );
+  }catch( e ){
+    DIALOGS.alertDialog( e )
+  }
+}
+
+//------------------------------------------------------------------------------
+function populateButtonLabels(){
+//------------------------------------------------------------------------------
+  var rule78 = amortize.getCurIndex();
+
+  for( var i=0; i< mode_labels.length; i++ ){
+    var btn_id = mode_labels[i][0];
+    var elm = document.getElementById( btn_id );
+    if( btn_id == "rate-btn" && rule78 ){
+      elm.innerHTML = "<u>F</u>inance Charge $";
+    }else{
+      elm.innerHTML = mode_labels[i][mode_is_savings+1];
+    }
+  }
+
+  var oNOrOff = ! ( dates_ModalDialog.fields.allSame || rule78 );
+  setDatesLight( oNOrOff );
+
+  var date_btn = document.getElementById( "date-btn" );
+  var finance_inp = document.getElementById( "rate-num" );
+  var balloon_inp = document.getElementById( "final-num" );
+  var rate_btn = document.getElementById( "rate-btn" );
+  if( rule78 ){
+    date_btn.disabled = true;
+    finance_inp.title = "Interest charged on the full life of loan";
+    balloon_inp.title = "Payoff amount if loan paid early";
+    rate_btn.title = "Calculate loan life time interest";
+  }else{
+    date_btn.disabled = false;
+    finance_inp.title = "Annual interest rate";
+    balloon_inp.title = "Final payment";
+    rate_btn.title = "Calculate % rate per annum";
+  }
+}
+
+//------------------------------------------------------------------------------
+function datesChanged(){ dates_ModalDialog.fields.modified = true; }
+//------------------------------------------------------------------------------
+
+//------------------------------------------------------------------------------
+function setDatesLight( onOff ){
+//------------------------------------------------------------------------------
+  var oFF = 0;
+
+  var img = document.getElementById( "dates-stat-img" );
+  if( onOff == oFF )
+    img.src = "Images/indicator off.png";
+  else
+    img.src = "Images/indicator on.png";
+}
+//------------------------------------------------------------------------------
+function ValueWheel( list_obj ){
+//------------------------------------------------------------------------------
+  var list = list_obj.list;
+  var len = list.length;
+
+  if( len < 2 )
+    throw "A list must have 2 or more items";
+
+  this.getCurValue = function(){
+    return list[ list_obj.curIndex ];};
+
+  this.reset = function(){ list_obj.curIndex = 0; };
+
+  this.getCurIndex = function(){ return list_obj.curIndex; };
+
+  this.turn = function() { list_obj.curIndex = (list_obj.curIndex+1) % len ; };
+
+  this.getList = function(){ return list_obj.list; };
+
+  this.setIndex = function( index ){
+    if( index >= len || index < 0 )
+      throw "Invalid position index";
+    list_obj.curIndex = index;
+  }
+}
+
+//------------------------------------------------------------------------------
+function turnWheel( elm, wheel ){
+//------------------------------------------------------------------------------
+  try{
+    wheel.turn();
+    elm.innerHTML = wheel.getCurValue(); 
+    recalcMsg();
+  }catch( err ){
+    DIALOGS.alertDialog( err );
+  }
+}
+//------------------------------------------------------------------------------
+
+var paymentFrequency = new ValueWheel( FINANCIAL.frequency );
+var paymentMode = new ValueWheel( FINANCIAL.pmtMode );
+var amortize = new ValueWheel( FINANCIAL.amortize );
+
+amortize.superTurn = amortize.turn;
+//------------------------------------------------------------------------------
+amortize.turn = function(){
+//------------------------------------------------------------------------------
+  var self = this;
+  var rule78 = ! amortize.getCurIndex();
+
+  if( mode_is_savings && rule78 ){	// savings & investment calculator
+    self.reset();			// only compounding applies
+    throw "Rule of 78s applies to loans only.";
+  }
+
+  var obj = getInputs();
+  var newVal;
+  if( ! rule78 )
+    newVal = intRate;
+  else{
+    var finCharge;
+    intRate = obj.rate;
+    if( consistentVals ){
+      obj.finalAmount = 0;
+      var amortizePeriods = FINANCIAL.getPayCount( obj );
+      finCharge = deciRound( amortizePeriods * obj.periodic - obj.initial );
+    }
+    newVal = finCharge || "";
+  }
+
+  self.superTurn();
+  populateButtonLabels();
+  document.getElementById( "rate-num" ).value = newVal;
+}
+//------------------------------------------------------------------------------
+function getDefaults(){
+//------------------------------------------------------------------------------
+  var result={};
+  var defVals = options_ModalDialog.fields.defaults;
+  result.frequency = defVals.frequency;
+  result.pmtMode = defVals.timing;
+  result.rule78  = defVals.method;
+  result.isLoan = !mode_is_savings;
+  return result;
+}
+
+//------------------------------------------------------------------------------
+function document_DOMContentLoaded( event ){
+//------------------------------------------------------------------------------
+  try{
+    DIALOGS.qImage = "Images/Question.png";
+    DIALOGS.aImage = "Images/Alert.png";
+    DIALOGS.hasStyle = true;
+    initializeStartDates();
+    initializeOptions();
+    initializeSaveInputs();
+    initializeSettings();
+  }catch( e ){
+    alert( e );	// DIALOGS may not have been initialized yet
+    console.log(e);
+  }
+}
+
+//------------------------------------------------------------------------------
+function date_btn_click(){
+//------------------------------------------------------------------------------
+// Dates prompt button is clicked to enter start and interest start
+// dates manually.
+
+  try{
+    var rule78 = amortize.getCurIndex();
+    if( rule78 )
+      throw "Multiple dates does not apply to Rule of 78s";
+
+
+    if( ! dates_ModalDialog )
+      initializeStartDates();
+
+    displayStartDates();
+  }catch( err ){
+    DIALOGS.alertDialog( err );
+  }
+};
+
+//------------------------------------------------------------------------------
+function periods_btn_click(){
+//------------------------------------------------------------------------------
+  try{
+    var inputs = getInputs();
+    var getPayCount;
+    var getMoreBalloon;
+    var getLastPayment;
+    if( inputs.rule78 ){
+      getPayCount = R78.getPayCount;
+
+      getMoreBalloon = function( inputs, fraction ){
+	return inputs.periodic * fraction;
+      };
+
+      getLastPayment = function( inputs, moreBalloon ) {
+	return inputs.finalAmount + moreBalloon;
+      };
+
+    }else{
+      getPayCount = FINANCIAL.getPayCount;
+
+      getMoreBalloon = function( inputs, fraction ){
+	var count = fraction;
+	var balloon = 0;
+	var pRate = FINANCIAL.periodRate( inputs.rate );
+	var payments = inputs.periodic;
+	return FINANCIAL.presentValOfPayments( balloon, pRate, count, payments );
+      };
+
+      getLastPayment = function( inputs, moreBalloon ){
+	var periods =  1;
+	var principal = moreBalloon;
+	var pRate = FINANCIAL.periodRate( inputs.rate );
+	return FINANCIAL.futureVal( principal, periods, pRate );
+      };
+    }
+
+    var exactCount = getPayCount( inputs );
+    var wholeCount = Math.floor( exactCount );
+    var fraction = exactCount - wholeCount;
+    var moreBalloon = deciRound( getMoreBalloon( inputs, fraction ));
+    var lastPayment = deciRound( getLastPayment( inputs, moreBalloon ));
+
+// ignore less than 1$ diffs
+    if( Math.round( lastPayment ) == Math.round( inputs.periodic )){
+      wholeCount ++;
+      consistentMsg();
+
+    }else if( ! moreBalloon ){
+      consistentMsg();
+
+    }else{
+      var updateBalloon = function( confirm ){
+	if( confirm ){
+	  bal_elm = document.getElementById( "final-num" );
+	  bal_elm.value = Number( bal_elm.value ) + moreBalloon;
+	  consistentMsg();
+	  confirm = true;
+	}else{
+	  recalcMsg();
+	}
+      }
+
+      var msg = "There is leftover balance of $" + moreBalloon + ". " + 
+	"Do you want this amount to be added to the balloon?";
+      var confirmBox = DIALOGS.confirmDialog( msg, "Yes", "No", updateBalloon );
+      confirmBox.show();
+    }
+
+    document.getElementById( "periods-num" ).value = wholeCount;
+
+  }catch( e ){
+    DIALOGS.alertDialog( e );
+  }
+}
+//------------------------------------------------------------------------------
+function rate_btn_click(){
+//------------------------------------------------------------------------------
+  try{
+    var getInterest;
+    var inputs = getInputs();
+    if( inputs.rule78 ){
+      getInterest = function( inputs ){ 
+	return deciRound( R78.getInterest( inputs ));
+      }
+    }else{
+      getInterest = function( inputs ){
+	return FINANCIAL.interestRateOfPayments( inputs, 3 );
+      }
+    }
+    var rate = getInterest( inputs );
+    document.getElementById( "rate-num" ).value = rate;
+    consistentMsg();
+  }
+  catch( e ){
+    DIALOGS.alertDialog( e );
+  }
+}
+//------------------------------------------------------------------------------
+function initial_btn_click(){
+//------------------------------------------------------------------------------
+  try{
+    var getPrincipal;
+    var inputs = getInputs();
+    if( inputs.rule78 )
+      getPrincipal = R78.getPrincipal;
+    else
+      getPrincipal = FINANCIAL.nthBalance;
+
+    document.getElementById( "initial-num" ).value = 
+      deciRound( getPrincipal( inputs ));
+    consistentMsg();
+  }
+  catch( e ){
+    DIALOGS.alertDialog( e );
+  }
+}
+
+//------------------------------------------------------------------------------
+function payment_btn_click(){
+//------------------------------------------------------------------------------
+  try {
+    var inputs = getInputs();
+    var getPayment;
+    if( inputs.rule78 )
+      getPayment = R78.getPayment;
+    else
+      getPayment = function( inputs ){ 
+	return [ 1, -1 ][ mode_is_savings] * 
+	  FINANCIAL.paymentsOfPresentValue( inputs );
+      };
+
+    document.getElementById( "periodic-num" ).value = 
+      deciRound( getPayment( inputs ));
+    consistentMsg();
+  }
+  catch( e ){
+    DIALOGS.alertDialog( e );
+  }
+}
+//------------------------------------------------------------------------------
+function final_btn_click(){
+//------------------------------------------------------------------------------
+  try {
+    var inputs = getInputs();
+    var getBalloon;
+    if( inputs.rule78 )
+      getBalloon = R78.getBalloon;
+    else
+      getBalloon = FINANCIAL.balloon;
+
+    document.getElementById( "final-num" ).value = 
+      deciRound( getBalloon( inputs ));
+    consistentMsg();
+  }
+  catch( e ){
+    DIALOGS.alertDialog( e );
+  }
+}
+
+//------------------------------------------------------------------------------
+function clear_btn_click(){
+//------------------------------------------------------------------------------
+  try{
+    setOptions( getDefaults() );
+  }catch(e){
+    DIALOGS.alertDialog( e );
+  }
+}
+//------------------------------------------------------------------------------
+function schedule_btn_click(){
+//------------------------------------------------------------------------------
+  try{
+    if( ! consistentVals )
+      throw "Inputs are inconsistent. Enter values and recalculate.";
+    window.open( "ins.html", "_blank" );
+  }catch( e ){
+    DIALOGS.alertDialog( e );
+  }
+};
+//------------------------------------------------------------------------------
+function page_slt_change(){
+//------------------------------------------------------------------------------
+  try{
+    mode_is_savings = Number( document.getElementById( "page-slt" ).value );
+    if( mode_is_savings && amortize.getCurIndex() ){
+      var amtz_elm = document.getElementById( "amortization-method" );
+      DIALOGS.alertDialog
+	( "Rule of 78s does not apply. Changing to compound interest." );
+      turnWheel( amtz_elm, amortize );
+    }
+  }catch( e ){
+    DIALOGS.alertDialog( e );
+  }
+  populateButtonLabels();
+}
+//------------------------------------------------------------------------------
+function options_btn_click(){
+//------------------------------------------------------------------------------
+  try{
+    options_ModalDialog.show();
+  }catch( e ){
+    DIALOGS.alertDialog( e );
+  }
+}
+
+//------------------------------------------------------------------------------
+function dates_ok_btn_click() {
+//------------------------------------------------------------------------------
+  try{
+    var obj = dates_ModalDialog.fields;
+    if( obj.modified ){
+      recalcMsg();
+      obj.start = document.getElementById( "dates-start-dat" ).getDateValue();
+      obj.payment = document.getElementById( "dates-payment-dat" ).getDateValue();
+      obj.interest = document.getElementById( "dates-interest-dat" ).getDateValue();
+
+      var st_dat = obj.start;
+      var py_dat = obj.payment;
+      var in_dat = obj.interest;
+      if( py_dat < st_dat || in_dat < st_dat )
+	throw( 
+	    "payment or interest begin dates can not be before start date." );
+
+      if( st_dat.getTime() == py_dat.getTime() && 
+	  st_dat.getTime() == in_dat.getTime() )
+	obj.allSame = true;
+      else
+	obj.allSame = false;
+
+      document.getElementById( "date-dat" ).setDateValue( obj.start );
+      obj.modified = false;
+      setDatesLight( ! obj.allSame );
+    }
+    dates_ModalDialog.hide();
+  }catch( err ){
+    DIALOGS.alertDialog( err );
+  }
+}
+
+//------------------------------------------------------------------------------
+function dates_cancel_btn_click(){
+//------------------------------------------------------------------------------
+  try{
+    var obj = dates_ModalDialog.fields;
+    if( obj.modified ){
+      document.getElementById( "dates-start-dat" ).value = obj.start;
+      document.getElementById( "dates-payment-dat" ).value = obj.payment;
+      document.getElementById( "dates-interest-dat" ).value = obj.interest;
+      obj.modified = false;
+    }
+    dates_ModalDialog.hide();
+  }catch( e ){
+    DIALOGS.alertDialog( e );
+  }
+}
+
+//------------------------------------------------------------------------------
+function dates_help_btn_click(){ 
+//------------------------------------------------------------------------------
+  help( "HELP.htm#Start_Dates" );
+}
+
+//------------------------------------------------------------------------------
+function dates_reset_btn_click(){
+//------------------------------------------------------------------------------
+  try{
+    var obj = dates_ModalDialog.fields;
+
+    if( ! obj.modified && obj.allSame )
+      return;
+
+    var dat = document.getElementById( "date-dat" ).value;
+
+    document.getElementById( "dates-start-dat" ).value = dat;
+    document.getElementById( "dates-payment-dat" ).value = dat;
+    document.getElementById( "dates-interest-dat" ).value = dat;
+
+    obj.modified = true;
+    obj.allSame = true;
+
+  }catch( e ){
+    DIALOGS.alertDialog( e );
+  }
+}
+
+//------------------------------------------------------------------------------
+function options_exit_btn_click(){
+//------------------------------------------------------------------------------
+  try{
+    var getResult = function( confirm ){
+      if( confirm )
+	options_ModalDialog.save();
+      else
+	options_ModalDialog.readCurVals();
+
+      options_ModalDialog.hide();
+    }
+
+    if( hasLocalStorage() && options_ModalDialog.getModified() )
+      DIALOGS.confirmDialog( 
+	  "Default options have changed. Would you like to save?", "Yes", "No",
+	  getResult ).show();
+    else
+      options_ModalDialog.hide();
+
+  }catch( e ){
+    DIALOGS.alertDialog( e );
+  }
+}
+//------------------------------------------------------------------------------
+function options_save_btn_click(){
+//------------------------------------------------------------------------------
+  try{
+    checkSave();
+    options_ModalDialog.save();
+    DIALOGS.alertDialog( "Default options saved." );
+  }catch( e ){
+    DIALOGS.alertDialog( e );
+  }
+}
+
+//---------------------------------------------------------------------------
+function options_apply_btn_click(){
+//---------------------------------------------------------------------------
+  try{
+    var pickedValues = options_ModalDialog.fields.defaults;
+    paymentFrequency.setIndex( pickedValues.frequency );
+    paymentMode.setIndex( pickedValues.timing );
+    while( amortize.getCurIndex() != pickedValues.method )
+      amortize.turn();
+    populateOptions();
+    recalcMsg();
+
+  }catch( e ){
+    DIALOGS.alertDialog( e );
+  }
+}
+
+//==============================================================================
+
+document.addEventListener( 
+ "DOMContentLoaded", document_DOMContentLoaded, true );
+
+window.addEventListener( "message", function( event ){ 
+  try{
+    if( event.data == "Schedule" )
+      event.source.postMessage( getInputs(), "*" );
+    else
+      throw( "Unknown window message received: " + event.data );
+  }catch(e){
+    alert( e );
+  }
+});
+    </script>
+
+  </head>
+
+  <body>
+
+    <div id="main-div" >
+      <nav>
+	<a id="click-first" title = "Click for commands menu." 
+	  href="#top-menu"  class="dropclick" >
+	</a>
+
+	<span id="calc-title" > New Calculation </span>
+	<ul id="top-menu" class="menu-panel">
+	  <li><a href="javascript:newCalc();" class="calls-dialog" >
+	      <img src="Images/new_calc.svg" >
+	      New</a> </li>
+	  <li><a id="save_calc_li" href="#save-calc">
+	      <img src="Images/save_calc.svg" >
+	      Save</a></li>
+	  <li><a href="javascript:openCalc();" class="calls-dialog" >
+	      <img src="Images/open_calc.svg" >
+	      Open</a></li>
+	  <hr>
+	  <li><a href="javascript:showSettings();">
+	      <img src="Images/Settings.svg" >
+	      Settings</a></li>
+	  <hr>
+	  <li><a href="javascript:help( 'HELP.htm' );">
+	      <img src="Images/Help_menu.svg" >
+	      Help</a></li>
+	</ul>
+      </nav>
+
+
+      <div class = "central" id="input-div"> 
+	<select id="page-slt" onchange="page_slt_change()" 
+	  title="Switch between investment/saving">
+	  <option value="0"> Loans and Annuities Calculator</option>
+	  <option value="1"> Savings and Investments Calculator</option>
+	</select>
+	<br>
+	<button id="date-btn" accesskey="D" type="button" 
+	  class="label-btn" onClick="date_btn_click()" 
+	  title="Initial, loan and compound start dates"> 
+	  <img id="dates-stat-img" 
+	  src="Images/indicator off.png"> Start <u>D</u>ates...
+	</button>
+	<!-- <input id="date-dat" autocomplete="on" type="date" format="Mon dd, yyyy" -->
+	<input id="date-dat" autocomplete="on" format="Mon dd, yyyy" 
+	  class="datepicker calc-ipt" title="Enter start date" >
+	<br> 
+	<button id="periods-btn"  type="button" accesskey="N" 
+	  class="label-btn" onClick="periods_btn_click()" 
+	  title="Calculate how many payments to payoff">
+	</button> 
+	<input id="periods-num" min="2" autocomplete="on" type="number" 
+	  class="calc-ipt" title="Payments' count - excluding balloon" 
+	  onchange="recalcMsg()" >
+	<br>
+
+	<button id="rate-btn" onClick = "rate_btn_click()" 
+	  accesskey="R" type="button" class="label-btn" 
+	  title="Calculate % rate per annum">
+	  Interest <u>R</u>ate %
+	</button>
+	<input id="rate-num" autocomplete="on" type=number  class="calc-ipt" 
+	  step=".001" title="Interest charged on $100 in 1 year." 
+	  onchange="recalcMsg()" >
+	<br>
+
+	<button id="initial-btn" onClick = "initial_btn_click()" accesskey="i" 
+	  type="button" class="label-btn" title="Calculate the initial amount">
+	</button>
+	<input id="initial-num" min=0  autocomplete="on" type="number" 
+	  class="calc-ipt" step=".01" title="Initial amount" onchange="recalcMsg()">
+	<br>
+
+	<button id="periodic-btn" accesskey="p" type="button" class="label-btn" 
+	  onClick="payment_btn_click()" title="Calculate periodic payment">
+	</button>
+	<input id="periodic-num" autocomplete="on" type="number" class="calc-ipt" 
+	  step=".01" title="Periodic payments" onchange="recalcMsg()" >
+	<br>
+
+	<button id="final-btn" accesskey="l" type="button" class="label-btn" 
+	  onClick="final_btn_click()" title="Calculate final payment">
+	</button>
+	<input id="final-num" autocomplete="on" type="number" class="calc-ipt" 
+	  step=".01" title="Final payment" onchange="recalcMsg()" >
+	<br>
+
+	<div class="command-line" >
+	  <button id="clear-btn" accesskey="C" onclick="clear_btn_click()" 
+	    title="Start over"><u>C</u>lear 
+	  </button>
+	<button id="schedule-btn" accesskey="S" onclick="schedule_btn_click()" 
+	  title="Open Amortization Schedule tab."><u>S</u>chedule 
+	</button>
+
+	<P class = "panel" id="input-panel">&#8203;</P>
+	</div>
+      </div>
+
+      <div class = "central" id= "options-div" > 
+	<p class= "options-group" > Payment Options </p>
+	<p class= "options-value" id= "payment-period-p" 
+	  onclick="turnWheel( this, paymentFrequency )">
+	</p>
+
+	<p class= "options-value" id= "settlement-p" 
+	  onclick="turnWheel( this, paymentMode )">
+	</p>
+
+	<img src= "Images/IntNavigator.jpg" alt="INTEREST NAVIGATOR" >
+	<p class= "options-group" > Amortization Method</p>
+	<p class= "options-value" id= "amortization-method" 
+	  onclick="turnWheel( this, amortize )">
+	</p>
+
+	<div class="command-line" >
+	  <button id="options-btn" accesskey="O"  onClick="options_btn_click()" 
+	    title="Modify default payment and interest options">
+	    Default <u>O</u>ptions...
+	  </button>
+	  <p class = "panel" id="optoins-panel">&#8203;</p>
+	</div>
+      </div>
+    </div>
+    <div id="start-dates" class="dialog">
+      <p class = "title-bar">Critical Start Dates</p>
+      <script>
+var initializeStartDates = function(){
+  try{
+    var attr = { cancel: dates_cancel_btn_click, allSame: true };
+    var div = document.getElementById( "start-dates" );
+    var over = document.getElementById( "date-btn" );
+    dates_ModalDialog = new DIALOGS.ModalDialog( attr, div, over );
+  }catch( err ){
+    DIALOGS.alertDialog( err );
+  }
+};
+
+var displayStartDates = function(){
+  var date_ipt_elm = document.getElementById( "date-dat" );
+  var obj = dates_ModalDialog.fields;
+  var start_dat = date_ipt_elm.getDateValue();
+  document.getElementById( "dates-start-dat" ).
+    setDateValue( start_dat );
+  if( obj.allSame ){
+    document.getElementById( "dates-payment-dat" ).
+      setDateValue( start_dat );
+    document.getElementById( "dates-interest-dat" ).
+      setDateValue( start_dat );
+  }else{ 
+    document.getElementById( "dates-payment-dat" ).
+      setDateValue( obj.payment );
+    document.getElementById( "dates-interest-dat" ).
+      setDateValue( obj.interest );
+  }
+  dates_ModalDialog.show();
+};
+      </script>
+      <div id="dates-inputs-div">
+	<div class="field-div">
+	  <span class="prompt" >
+	    Start Date:
+	  </span>
+	    <!-- <input id="dates-start-dat" autocomplete="on" type="date" -->
+	    <input id="dates-start-dat" autocomplete="on"  
+	      format="Mon dd, yyyy" class="datepicker" title="Start Date" 
+	      onchange="datesChanged()">
+	    <p> Enter date on which the principal is transfered. In most cases all
+	    three dates are the same </p>
+	</div>
+
+	<div class="field-div">
+	  <span class="prompt" >
+	    Payment begins on:
+	  </span>
+	    <!-- <input id="dates-payment-dat" autocomplete="on" type="date" -->
+	    <input id="dates-payment-dat" autocomplete="on"
+	      format="Mon dd, yyyy" class="datepicker" title="Payment begin date" 
+	      onchange="datesChanged()">
+	    <p> Enter date payment period starts. This is the date on which period 1
+	    begins. First payment will be due on this date if they are to be made
+	    in advance or one period later if in arreras. </p>
+	</div>
+
+	<div class="field-div">
+	  <span class="prompt" >
+	    Interest charge begins:
+	  </span>
+	    <!-- <input id="dates-interest-dat" autocomplete="on" type="date" -->
+	    <input id="dates-interest-dat" autocomplete="on"
+	      format="Mon dd, yyyy" class="datepicker" title="Interest begins" 
+	      onchange="datesChanged()">
+	    <p> Enter the date on which interest begins to be accrued. Compounding
+	    begins on this date. </p>
+	</div>
+      </div>
+
+      <div id="dates-buttons-div" class="command-line">
+	<button id="dates-ok-btn" onclick="dates_ok_btn_click()" type="button" 
+	  accesskey="O" title="Accept dates and dismiss."> <u>O</u>K
+	</button><br>
+
+	<button id="dates-cancel-btn" onclick="dates_cancel_btn_click()" 
+	  type="button" accesskey="C" 
+	 title="Undo all changes and dismiss."> <u>C</u>ancel
+	</button><br>
+
+	<button id="dates-reset-btn" onclick="dates_reset_btn_click()" 
+	  type="button" accesskey="R" 
+	  title="Set all dates to the default value."> <u>R</u>eset
+	</button><br>
+
+	<button id="dates-help-btn" onclick="dates_help_btn_click()" 
+	   type="button" accesskey="H" title="Start Dates Help"> <u>H</u>elp
+	</button><br>
+      </div>
+    </div>
+
+    <div id="default-options-div" class="dialog">
+      <p class="title-bar">Default Options</p>
+      <script> 
+//-----------------------------------------------------------------------------
+function initializeOptions(){
+  //-----------------------------------------------------------------------------
+
+  try{
+    var curVals = { frequency: 0, timing: 0, method: 0 };
+    var modified = false;
+
+    //---------------------------------------------------------------------------
+    var addRadio = function( fls, opt_list, name ){
+      //---------------------------------------------------------------------------
+      for( var i=0; i<opt_list.length; i++ ){
+	var input = document.createElement( "INPUT" );
+	input.setAttribute( "type", "radio" );
+	input.setAttribute( "name", name );
+	input.setAttribute( "id", name + i );
+	input.setAttribute( "posIndex", i );
+	fls.appendChild( input );
+
+	var label = document.createElement( "LABEL" );
+	label.setAttribute( "for", name + i );
+	var text = document.createTextNode( opt_list[ i ]);
+	label.appendChild( text );
+	fls.appendChild( label );
+
+	input.onchange = function( e ){ 
+	  curVals[ e.currentTarget.name ] = 
+	    Number( e.currentTarget.attributes.posIndex.value ); 
+	  modified = true;
+	};
+
+	if( i < opt_list.length -1 ){
+	 var br = document.createElement( "BR" );
+	 fls.appendChild( br );
+	 }
+	 }
+	 };
+    //-----------------------------------------------------------------------------
+
+    var options_slt = document.getElementById( "options-slt" );
+	 //---------------------------------------------------------------------------
+	 options_slt.onchange = function( e ){
+	 //---------------------------------------------------------------------------
+	 curVals.frequency = e.currentTarget.selectedIndex;
+	 modified = true;
+	 };
+	 //---------------------------------------------------------------------------
+
+	 var frequency_list = FINANCIAL.frequency.list;
+	 for( var i = 0; i < frequency_list.length; i++ ){
+	 var option = document.createElement( "option" );
+	 option.text = frequency_list[ i ];
+	 options_slt.add( option );
+	 }
+
+	 var timing_fls = document.getElementById( "options-timing-fls" );
+	 var mode_list = FINANCIAL.pmtMode.list;
+	 addRadio( timing_fls, mode_list, "timing" );
+
+	 var amortization_fls = document.getElementById( "options-amortization-fls" );
+	 var amz_list = FINANCIAL.amortize.list;
+	 addRadio( amortization_fls, amz_list, "method" );
+
+	 options_ModalDialog = new DIALOGS.ModalDialog(
+	     { cancel: options_exit_btn_click, defaults: curVals }, 
+	     document.getElementById( "default-options-div" ),
+	     document.getElementById( "options-div" ));
+
+	 //---------------------------------------------------------------------------
+	 options_ModalDialog.readCurVals = function(){
+	 //---------------------------------------------------------------------------
+	 if( hasLocalStorage() ){
+	   var defOpts = localStorage.defaultOptions;
+	   if( defOpts ){
+	     var savedVals = JSON.parse( localStorage.defaultOptions );
+	     if( savedVals ){
+	 curVals.frequency = savedVals.frequency
+	 curVals.timing = savedVals.timing
+	 curVals.method = savedVals.method
+	     }
+	   }
+	 }
+	 modified = false;
+	 };
+
+	 options_ModalDialog.readCurVals();
+
+	 options_ModalDialog.parentShow = options_ModalDialog.show;
+	 //---------------------------------------------------------------------------
+	 options_ModalDialog.show = function(){
+	 //---------------------------------------------------------------------------
+	 this.parentShow();
+
+	 var options_slt = document.getElementById( "options-slt" );
+	 options_slt.selectedIndex = curVals.frequency;
+
+
+	 var timingRadios = document.getElementById( "options-timing-fls" ).
+	 querySelectorAll( "INPUT" );
+	 timingRadios[ curVals.timing ].checked = true;
+
+	 var methodRadios = document.getElementById( "options-amortization-fls" ).
+	 querySelectorAll( "INPUT" );
+	 methodRadios[ curVals.method ].checked = true;
+	 };
+
+	 //---------------------------------------------------------------------------
+	 options_ModalDialog.save =  function(){
+	   //---------------------------------------------------------------------------
+	   if( modified ){
+	     localStorage.defaultOptions = JSON.stringify( curVals );
+	     modified = false;
+	   }
+	 };
+	 //---------------------------------------------------------------------------
+	 options_ModalDialog.getModified = function(){ return modified; };
+	 //---------------------------------------------------------------------------
+  }catch( err ){
+    DIALOGS.alertDialog( err );
+  }
+};
+
+      </script>
+    <div class="content-div">
+      <label for="options-slt">Payment Frequency:</label>
+      <select id="options-slt">
+      </select>
+      <fieldset id="options-timing-fls">
+	<legend>Payment Timing:</legend>
+      </fieldset>
+      <fieldset id="options-amortization-fls">
+	<legend>Amortization Method:</legend>
+      </fieldset>
+      <div class = "command-line" id="options-command-div">
+	<button id="options-apply-btn" accesskey="A" 
+	  onclick = "options_apply_btn_click()" 
+	  title = "Apply selections to current calculation only">
+	  <u>A</u>pply
+	</button>
+	<button id="options-save-btn" accesskey="S" 
+	  onclick="options_save_btn_click()" 
+	  title = "Permenantly save options as default">
+	  <u>S</u>ave
+	</button>
+	<button id="options-exit-btn" accesskey="E" 
+	  onclick="options_exit_btn_click()" title = "Close options dialog">
+	  <u>E</u>xit
+	</button>
+      </div>
+    </div>
+    </div>
+
+
+      <div id="save-calc" class="dialog">
+	<p class = "title-bar"> Save Calculation</p>
+	<script>
+//------------------------------------------------------------------------------
+function initializeSaveInputs(){
+  //------------------------------------------------------------------------------
+  try{
+    var ipt = document.getElementById( "save-calc-name" );
+    function cancel(){ 
+      try{
+	saveInputs_ModalDialog.hide(); 
+	ipt.value = "";
+      }catch( e ){
+	DIALOGS.alertDialog( e );
+      }
+    }
+    var cancel_btn = document.getElementById( "save-calc-cancel" );
+    cancel_btn.addEventListener( "click", cancel );
+
+    function save(){
+      try{
+	if( ipt.value && ipt.value != calcName )
+	  setCalcName( ipt.value );
+
+	saveObject( calcName, getInputs() );
+	saveInputs_ModalDialog.hide(); 
+	ipt.value="";
+
+      }catch( e ){
+	DIALOGS.alertDialog( e );
+      }
+      saveInputs_ModalDialog.hide();
+    }
+    var save_btn = document.getElementById( "save-calc-save" );
+    save_btn.addEventListener("click", save );
+
+    function getName(){
+      try{
+	if( ! consistentVals )
+	  throw ("Inputs are inconsistent. Enter values and recalculate.");
+
+	ipt.value = calcName;
+	saveInputs_ModalDialog.show();
+      }catch( e ){
+	DIALOGS.alertDialog( e );
+      }
+    }
+    var menu_elm = document.getElementById( "save_calc_li" );
+    menu_elm.addEventListener( "click", getName );
+
+    var params = { cancel: cancel };
+    var div_elm = document.getElementById( "save-calc" );
+    var topLeft = document.getElementById( "input-div" );
+    saveInputs_ModalDialog = new DIALOGS.ModalDialog( params, div_elm, topLeft );
+  }catch( err ){
+    DIALOGS.alertDialog( err );
+  }
+}
+//------------------------------------------------------------------------------
+function saveInputs(){
+//------------------------------------------------------------------------------
+  try{
+    if( ! consistentVals )
+      throw ("Inputs are inconsistent. Enter values and recalculate.");
+    saveInputs_ModalDialog.show();
+    /*
+     */
+// Some how we need to get the new file name.
+  }catch( e ){
+    DIALOGS.alertDialog( e );
+  }
+  var topLeft = document.getElementById( "input-div" );
+}
+
+	</script>
+	<div class="content-div">
+	  <label for="save-calc-name">Calculation Name:</label>
+	  <input type=text id=save-calc-name title="Enter a name for the calculation">
+	  <div class="command-line" id="save-calc-commands">
+	    <button id="save-calc-save" title="Save to file system">Save</button>
+	    <button id="save-calc-cancel" title="Don't save">Cancel</button>
+	  </div>
+	</div>
+      </div>
+      <script>
+//------------------------------------------------------------------------------
+function openCalc(){
+//------------------------------------------------------------------------------
+  var input_elm;
+  function restoreObj( obj ){
+    try{
+      var correct = validateInputs( obj, 2 );
+      setOptions( obj );
+      setValues( obj );
+      if( correct )
+	consistentMsg();
+      else
+	recalcMsg();
+
+    }catch( err ){
+      DIALOGS.alertDialog( err );
+      clear_btn_click();
+    }
+  }
+
+  try{
+    readObject( restoreObj, DIALOGS.alertDialog );
+  }catch( err ){
+    DIALOGS.alertDialog( err );
+  }
+}
+//------------------------------------------------------------------------------
+function newCalc(){
+  try{
+    clear_btn_click();
+    setCalcName();
+  }catch( e ){
+    DIALOGS.alertDialog( e );
+  }
+}
+
+      </script>
+      <div id="settings-dlg" class="dialog">
+	<p class="title-bar"> Application Settings</p>
+	<script>
+//------------------------------------------------------------------------------
+function initializeSettings(){
+//------------------------------------------------------------------------------
+  try{
+    var browserHasDates = false;
+    var elm = document.getElementById( "date-dat" );
+    elm.setAttribute( "type", "date" );
+    browserHasDates = ( elm.type == "date" );
+
+//------------------------------------------------------------------------------
+    function setInitialValues(){
+//------------------------------------------------------------------------------
+      try{
+	var hasInitial = false;
+	if( localStorage && localStorage.savedValues ){
+	  var obj = JSON.parse( localStorage.savedValues );
+	  validateInputs( obj );
+	  setOptions( obj );
+	  setValues( obj );
+	  if( obj.consistentVals ) consistentMsg();
+	  else recalcMsg();
+	  hasInitial = true;
+	}
+      }catch( e ){
+	DIALOGS.alertDialog( e );
+      }
+      if( ! hasInitial )
+	clear_btn_click();
+
+      if( localStorage && localStorage.savedValues ){
+	localStorage.removeItem( "savedValues" );
+      }
+    }
+//------------------------------------------------------------------------------
+    function calendarLoader(){
+//------------------------------------------------------------------------------
+      var head = document.getElementsByTagName('head')[0];
+      var script = document.createElement('script');
+      script.type='text/javascript';
+      script.onload = function(){ loadDatePicker( setInitialValues );};
+      script.src ='lib/calendarLoader.js';
+      head.appendChild(script);
+    }
+//------------------------------------------------------------------------------
+    function setInputsType( inputType, format ){
+//------------------------------------------------------------------------------
+      var dateInputs = document.getElementsByClassName( "datepicker" );
+      for( var i = 0; i < dateInputs.length; i++ ){
+	dateInputs[ i ].setAttribute( "type", inputType );
+	if( inputType != "date" && format )
+	  dateInputs[ i ].setAttribute( "format", format);
+	
+	if( inputType == "date" ){
+	  dateInputs[ i ].getDateValue = function(){ return this.valueAsDate };
+	  dateInputs[ i ].setDateValue = function( d ){ this.valueAsDate = d };
+	}
+      }
+    }
+//------------------------------------------------------------------------------
+
+    if( ! hasLocalStorage() ){
+      setInputsType( browserHasDates ? "date" : "text" );
+      if( browserHasDates )
+	clear_btn_click();
+      else
+	calendarLoader();
+      checkSave();
+      return;		// no point in going any further
+    }
+
+    var curSettings;
+    var browser_rdo = document.getElementById( "settings-browser-rdo" );
+    var app_rdo     = document.getElementById( "settings-app-rdo" );
+    var date_order  = document.getElementById( "settings-date-order" );
+    var format_month= document.getElementById( "settings-format-month" );
+//------------------------------------------------------------------------------
+    function loadControls(){
+//------------------------------------------------------------------------------
+      // varibles -> controls' settings
+      browser_rdo.checked = curSettings.useBrowserPicker;
+      app_rdo.checked = !curSettings.useBrowserPicker;
+      date_order.selectedIndex = curSettings.datesFormatIndex;
+      format_month.selectedIndex = curSettings.monthFormatIndex;
+    }
+
+//------------------------------------------------------------------------------
+    function unloadControls(){
+//------------------------------------------------------------------------------
+      // controls' settings -> variables
+      curSettings.useBrowserPicker = browser_rdo.checked;
+      curSettings.datesFormatIndex = date_order.selectedIndex;
+      curSettings.monthFormatIndex = format_month.selectedIndex;
+    }
+
+//------------------------------------------------------------------------------
+    function getDateFormat(){
+//------------------------------------------------------------------------------
+      var format = "";
+      var monthIndex = curSettings.monthFormatIndex || 0;
+      var datesIndex = curSettings.datesFormatIndex || 0;
+      var monthString= ['Mon', 'MON', 'Month', 'MONTH', 'mm' ][ monthIndex ];
+
+      if( ! curSettings.userBrowserPicker ){
+	switch( datesIndex ){
+	  case 0: 
+	    if( monthIndex == 4 )
+	      format = "mm/dd/yyyy";
+	    else
+	      format = monthString + " " + "dd, " + "yyyy";
+	    break;
+
+	  case 1:
+	    if( monthIndex == 4 )
+	      format = "dd-mm-yyyy";
+	    else
+	      format = "dd " + monthString + " yyyy";
+	    break;
+
+	  case 2:
+	    if( monthIndex == 4 )
+	      format = "yyyy-mm-dd";
+	    else
+	      format = "yyyy " + monthString + " dd";
+	}
+      }
+      return format;
+    }
+
+//------------------------------------------------------------------------------
+    function setDateFormats(){
+//------------------------------------------------------------------------------
+      var inputFormat = getDateFormat();
+      var dateFields = document.getElementsByClassName( "datepicker" );
+      for( var i=0; i < dateFields.length; i++ ){
+	var elm = dateFields[i];
+	elm.setFormat( inputFormat );
+      }
+    }
+
+//------------------------------------------------------------------------------
+    function cancel(){ 
+//------------------------------------------------------------------------------
+      try{
+	settings_ModalDialog.hide(); 
+	loadControls();
+	settings_ModalDialog.fields.modified = false;
+      }catch( e ){
+	DIALOGS.alertDialog( e );
+      }
+    }
+    var cancel_btn = document.getElementById( "settings-cancel-btn" );
+    cancel_btn.addEventListener( "click", cancel );
+
+    var browser_rdo = document.getElementById( "settings-browser-rdo" );
+//------------------------------------------------------------------------------
+    function browser_rdo_click(){
+//------------------------------------------------------------------------------
+      try{
+	browser_rdo.checked = true;
+	app_rdo.checked = false;
+	settings_ModalDialog.fields.modified = true;
+      }catch( error ){
+	DIALOGS.alertDialog( error );
+      }
+    }
+    browser_rdo.addEventListener( "click", browser_rdo_click );
+
+    var app_rdo =     document.getElementById( "settings-app-rdo");
+    function app_rdo_click(){
+      try{
+	browser_rdo.checked = false;
+	app_rdo.checked = true;
+	settings_ModalDialog.fields.modified = true;
+      }catch( error ){
+	DIALOGS.alertDialog( error );
+      }
+    }
+    app_rdo.addEventListener( "click", app_rdo_click );
+
+    function select_click(){
+      try{
+	settings_ModalDialog.fields.modified = true;
+      }catch( error ){
+	DIALOGS.alertDialog( error );
+      }
+    }
+    var order_select = document.getElementById( "settings-date-order" );
+    var month_select = document.getElementById( "settings-format-month" );
+    order_select.addEventListener( "click", select_click );
+    month_select.addEventListener( "click", select_click );
+
+//------------------------------------------------------------------------------
+    function oK(){
+//------------------------------------------------------------------------------
+      try{
+	if( settings_ModalDialog.fields.modified ){
+	  var usedBrowserPicker = curSettings.useBrowserPicker;
+	  unloadControls();
+	  localStorage.settings = JSON.stringify( curSettings );
+	  settings_ModalDialog.fields.modified = false;
+
+	  if( usedBrowserPicker != curSettings.useBrowserPicker ){
+	    DIALOGS.alertDialog( "Reloading page for the new settings to take effect." );
+	    var inputs = getInputs();
+	    inputs.consistentVals = consistentVals;
+	    localStorage.savedValues = JSON.stringify( inputs );
+	    window.location.reload();
+	    return;		// should not execute
+	  }
+	  if( ! curSettings.useBrowserPicker )
+	    setDateFormats();
+	}
+	settings_ModalDialog.hide(); 
+      }catch( e ){
+	DIALOGS.alertDialog( e );
+      }
+    }
+    var oK_btn = document.getElementById( "settings-ok-btn" );
+    oK_btn.addEventListener( "click", oK );
+
+    curSettings = null;
+    if( localStorage.settings ){
+      try{
+	curSettings = JSON.parse( localStorage.settings );
+      }catch(e){
+	console.log( e );
+      }
+    }
+
+    if( ! curSettings ){
+      curSettings = {};
+      curSettings.useBrowserPicker = browserHasDates;
+      curSettings.datesFormatIndex = 0;
+      curSettings.monthFormatIndex = 0;
+    }else{
+      if( curSettings.useBrowserPicker && ! browserHasDates )
+	curSettings.useBrowserPicker = false;
+      if( ! ( "datesFormatIndex" in curSettings ))
+	settings.datesFormatIndex = 0;
+      if( ! ( "monthFormatIndex" in curSettings ))
+	settings.monthFormatIndex = curSettings;
+    }
+
+    if( ! browserHasDates )
+      document.getElmentById( "settings-browser-rdo" ).disabled = true;
+
+    if( curSettings.useBrowserPicker ){
+      setInputsType( "date" );
+      setInitialValues();
+    }else{
+      var datIndex = curSettings.datesFormatindex;
+      var monIndex = curSettings.monthFormatIndex;
+      var format ;
+      if( datIndex > 0 || monIndex > 0 )
+	format = getDateFormat();
+
+      setInputsType( "text", format );
+      calendarLoader();
+    }
+    loadControls();
+
+    var parms = { cancel: cancel, modified: false };
+    var div_elm = document.getElementById( "settings-dlg" );
+    var topLeft = document.getElementById( "input-div" );
+    settings_ModalDialog = new DIALOGS.ModalDialog( parms, div_elm, topLeft );
+
+  }catch( error ){
+    DIALOGS.alertDialog( error );
+  }
+}
+//------------------------------------------------------------------------------
+function showSettings(){
+  //------------------------------------------------------------------------------
+  try{
+    checkSave();
+    settings_ModalDialog.show();
+  }catch( e ){
+    DIALOGS.alertDialog( e );
+  }
+}
+	</script>
+	<div class="content-div">
+	  <fieldset id="settings-picker-source-fl">
+	    <legend> Use date picker provided by:</legend>
+	    <input  type="radio" id="settings-browser-rdo"> Browser <br>
+	    <input  type="radio" id="settings-app-rdo"    > Application <br>
+	  </fieldset>
+	  <br>
+	  <label for="settings-date-order"> Dates format:</label>
+	  <select id="settings-date-order">
+	    <option> Month, Day and Year </option>
+	    <option> Day, Month and Year </option>
+	    <option> Year, Month and Day </option>
+	  </select>
+	  <br>
+	  <label for="settings-format-month"> Month format:</label>
+	  <select id="settings-format-month">
+	    <option> Mon   </option>
+	    <option> MON   </option>
+	    <option> Month </option>
+	    <option> MONTH </option>
+	    <option> mm    </option>
+	  </select>
+	</div>
+	<div class="command-line">
+	  <button id="settings-ok-btn">OK</button> 
+	  <button id="settings-cancel-btn">Cancel</button>
+	</div>
+      </div>
+      <noscript 
+	style="color:red; background-color:yellow; font-size: 150%; width: 100%" >
+	This application uses JavaScript. It is not enabled in your browser
+      </noscript>
+  </body>
+</html>
+

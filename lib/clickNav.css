@@ -1,0 +1,76 @@
+/*
+ * click type navigation style sheet
+ */
+#click-first{
+  background-color:#DDDDDD;
+  text-decoration: none;
+  vertical-align: middle;
+  padding-left:.5em;
+  padding-right:.5em;
+}
+
+#click-first::after{
+  margin:0;
+  border:0;
+  padding:0;
+  content: '\2261';
+}
+
+#click-first:hover{
+  background: black;
+  color: white;
+  vertical-align: middle;
+}
+
+.menu-panel{
+  background-color: #DDDDDD;
+  display: none;
+  position: absolute;
+  left:0; 
+  top: 100%;
+
+  float: left;
+  list-style: none;
+  margin:0;
+  padding-left: 0;
+  padding-right: 0;
+  padding-bottom: 0.5em;
+  border: outset 2px;
+  border-color: #DDDDDD;
+}
+.menu-panel hr{ border: inset #DDDDDD 1px;}
+.menu-panel a{ 
+  color: initial;
+  background: transparent;
+  text-decoration: none; 
+  padding-left: 0.5em;
+  padding-right: 0.75em;
+  display: block;
+}
+.menu-panel img{ 
+  vertical-align: middle;
+  height: 1.5em; 
+  margin:0; padding:0;
+  padding-right: 1em;
+  border:0;
+}
+.menu-panel a:hover{ color:white; background: #AAA;}
+.menu-panel h3{
+  padding-top:0;
+  padding-bottom:0;
+  margin-top:0;
+  margin-bottom:0; 
+  text-align: center; 
+}
+
+nav{
+  position: relative;
+  top: 0;
+  left: 0;
+  z-index: 1;
+
+  width: 100%;
+  background-color: #F5F0E6;
+  height: auto;
+}
+
